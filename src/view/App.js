@@ -35,7 +35,7 @@ function useFormState(initState) {
 function App() {
   const [setState, getState] = useFormState(initState);
 
-  getState.map(R.concat('effect: ')).map(console.log).runWith();
+  getState.map(console.log).runWith();
 
   const onSubmit = handler(setState);
 
