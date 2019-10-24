@@ -1,7 +1,8 @@
 import React, { Children } from 'react';
 import Form from 'antd/lib/form';
 import * as R from 'ramda';
-import { Right, Left } from 'crocks';
+import Maybe from 'crocks/Maybe';
+import Either, { Left, Right } from 'crocks/Either';
 
 import './index.scss';
 
@@ -13,10 +14,13 @@ const rule = R.path(['props', 'rules']);
 // fields :: (a, b -> (c -> d)) -> a -> b -> c -> Either d c
 const fields = R.curry((fn, a, b, c) => a && b ? fn(a, b)(c) : c);
 
+const logError = R.compose(alert, R.concat('请完成表单: '));
+
 // 表单校验
 const submitter = R.curry((f, x) => e => x.validateFields((err, values) => {
   e.preventDefault();
-  return !err ? Right(f(values)) : Left(err);
+  console.log(Maybe.of(err));
+  Maybe.of(err).either(() => f(values), () => logError(JSON.stringify(err)));
 }));
 
 // 封装FormItem组件
