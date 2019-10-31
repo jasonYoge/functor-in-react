@@ -7,6 +7,7 @@ import Async from 'crocks/Async';
 import maybeToAsync from 'crocks/Async/maybeToAsync';
 import safe from 'crocks/Maybe/safe';
 import isObject from 'crocks/predicates/isObject';
+import isString from 'crocks/predicates/isString';
 
 import { TextInput, PwdInput } from './components/Input';
 import initState from './State';
@@ -29,30 +30,33 @@ const getUsername = getState => getState.map(getUserProp);
 
 const handler = R.curry((setState, data) => setState.runWith(data));
 
-const fetchMethod = url => Async((reject, resolve) => fetch(url).then(data => data.json().then(resolve)).catch(reject))
-  // .chain(res => Async((err, data) => res.json().then(data).catch(err)))
-  .chain(maybeToAsync('Fetch error!!!', safe(isObject)));
+const fetchMethod = url => Async((reject, resolve) => 
+  fetch(url).then(data => data.json().then(resolve)).catch(reject))
+  .chain(maybeToAsync('Return Type Error!!!', safe(isObject)));
+  // .chain(maybeToAsync('Return Type Error!!!', safe(isString)));
 
-const useFormState = initState => {
+const customState = R.curry((setter, getter, initState) => {
   const [state, _setState] = useState(initState);
 
   const getState = Arrow(() => state);
 
   const setState = Arrow(_setState);
 
-  return [setUsername(setState), getUsername(getState)];
-};
+  return [setter(setState), getter(getState)];
+});
 
-const useFetch = R.curry((url, setState) => useEffect(() => fetchMethod(url).fork(alert, (res) => setState.runWith(res)), []));
+const useFormState = customState(setUsername, getUsername);
+
+const useFetch = R.curry((url, resolve, reject) => useEffect(() => fetchMethod(url).fork(reject, resolve), []));
 
 function App() {
   const [setState, getState] = useFormState(initState);
 
-  useFetch(requestUrl, setState);
-
-  getState.map(R.concat('username: ')).map(console.log).runWith();
+  useFetch(requestUrl, res => setState.runWith(res), alert);
 
   const onSubmit = handler(setState);
+
+  // getState.map(R.concat('username: ')).map(console.log).runWith();
 
   return (
     <div className="App">
